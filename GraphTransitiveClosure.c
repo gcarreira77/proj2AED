@@ -32,7 +32,7 @@ Graph* GraphComputeTransitiveClosure(Graph* g) {
   assert(GraphIsWeighted(g) == 0);       
 
   unsigned int numVertices = GraphGetNumVertices(g); // numero de vertices do grafo
-  Graph* transitiveClosure = GraphCreate(numVertices, 1, 0); //cria um grafo direcionado vazio
+  Graph* transitiveClosure = GraphCreate(numVertices, 1, 0); //cria um grafo direcionado vaziozz
 
   // Itera por cada vertice
   for (unsigned int u = 0; u < numVertices; u++) {
