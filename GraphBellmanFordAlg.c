@@ -18,6 +18,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "Graph.h"
 #include "IntegersStack.h"
@@ -33,62 +34,127 @@ struct _GraphBellmanFordAlg {
   unsigned int startVertex;  // The root of the shortest-paths tree
 };
 
-GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g, unsigned int startVertex) {
-  assert(g != NULL);  // Ensure the graph is not NULL
-  assert(startVertex < GraphGetNumVertices(g));  // Ensure the start vertex is valid
-  assert(GraphIsWeighted(g) == 0); // Assuming the graph is unweighted
+/* Inicial unchanged function
+GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g,
+                                                unsigned int startVertex) {
+  assert(g != NULL);
+  assert(startVertex < GraphGetNumVertices(g));
+  assert(GraphIsWeighted(g) == 0);
 
-  // Allocate memory for the result structure
-  GraphBellmanFordAlg* result = (GraphBellmanFordAlg*)malloc(sizeof(struct _GraphBellmanFordAlg));
-  assert(result != NULL);  // Ensure memory allocation was successful
+  GraphBellmanFordAlg* result =
+      (GraphBellmanFordAlg*)malloc(sizeof(struct _GraphBellmanFordAlg));
+  assert(result != NULL);
 
-  unsigned int numVertices = GraphGetNumVertices(g);  // Get the number of vertices
-  result->graph = g;  // Store the graph in the result structure
-  result->startVertex = startVertex;  // Store the start vertex
+  // Given graph and start vertex for the shortest-paths
+  result->graph = g;
+  result->startVertex = startVertex;
 
-  // Initialize arrays for marked, distance, and predecessor
-  result->marked = (unsigned int*)malloc(numVertices * sizeof(unsigned int));
+  unsigned int numVertices = GraphGetNumVertices(g);
+
+  //
+  // TO BE COMPLETED !!
+  //
+  // CREATE AND INITIALIZE
+  // result->marked
+  // result->distance
+  // result->predecessor
+  //
+
+  // Mark all vertices as not yet visited, i.e., ZERO
+  
+  // No vertex has (yet) a (valid) predecessor
+  
+  // No vertex has (yet) a (valid) distance to the start vertex
+  
+  // THE ALGORTIHM TO BUILD THE SHORTEST-PATHS TREE
+
+  return NULL;
+}
+
+*/
+
+GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g,
+                                                unsigned int startVertex) {
+  assert(g != NULL);
+  assert(startVertex < GraphGetNumVertices(g));
+  assert(GraphIsWeighted(g) == 0); // Ensure the graph is unweighted
+
+  GraphBellmanFordAlg* result =
+      (GraphBellmanFordAlg*)malloc(sizeof(struct _GraphBellmanFordAlg));
+  assert(result != NULL);
+
+  // Initialize attributes
+  unsigned int numVertices = GraphGetNumVertices(g);
+  result->graph = g;
+  result->startVertex = startVertex;
+
+  // Allocate memory for marked, distance, and predecessor arrays
+  result->marked = (unsigned int*)calloc(numVertices, sizeof(unsigned int));
   result->distance = (int*)malloc(numVertices * sizeof(int));
   result->predecessor = (int*)malloc(numVertices * sizeof(int));
 
-  // Initialize arrays: all vertices are unvisited, no path initially, no predecessors
+  assert(result->marked != NULL);
+  assert(result->distance != NULL);
+  assert(result->predecessor != NULL);
+
+  // Initialize all vertices as unvisited and distances as "infinity" (-1)
   for (unsigned int i = 0; i < numVertices; i++) {
-    result->marked[i] = 0;  // Not visited
-    result->distance[i] = -1;  // No path initially
-    result->predecessor[i] = -1;  // No predecessor initially
+    result->marked[i] = 0;
+    result->distance[i] = -1;  // -1 represents infinity
+    result->predecessor[i] = -1;
   }
 
-  result->distance[startVertex] = 0;  // The distance to the start vertex is 0
+  // Initialize the start vertex
+  result->marked[startVertex] = 1;
+  result->distance[startVertex] = 0;
 
-  // Bellman-Ford algorithm: Relax edges up to numVertices-1 times
+  // Perform the Bellman-Ford algorithm
   for (unsigned int i = 0; i < numVertices - 1; i++) {
     for (unsigned int v = 0; v < numVertices; v++) {
-      unsigned int* neighbors = GraphGetAdjacentsTo(g, v);  // Get the neighbors of vertex v
-      
-      unsigned int numNeighbors;
+      if (result->marked[v]) { // Only consider reached vertices
+        unsigned int* adjacents = GraphGetAdjacentsTo(g, v);
+        double* distances = GraphGetDistancesToAdjacents(g, v);
 
-      // Check if the graph is directed or not
-      if (GraphIsDigraph(g)) {
-        // For directed graphs, use the out-degree (number of outgoing edges)
-        numNeighbors = GraphGetVertexOutDegree(g, v);
-      } else {
-        // For undirected graphs, use the vertex degree (number of edges connected)
-        numNeighbors = GraphGetVertexDegree(g, v);
-      }
-
-      // Relax the edges (v, w)
-      for (unsigned int j = 0; j < numNeighbors; j++) {
-        unsigned int w = neighbors[j];  // Get the neighbor w of vertex v
-        // Relaxation: if there's a shorter path to w through v
-        if (result->distance[v] != -1 && (result->distance[w] == -1 || result->distance[w] > result->distance[v] + 1)) {
-          result->distance[w] = result->distance[v] + 1;  // Update the distance to w
-          result->predecessor[w] = v;  // Update the predecessor of w
+        // Ensure that adjacents and distances are valid
+        if (adjacents == NULL || distances == NULL) {
+          free(adjacents);
+          free(distances);
+          continue;
         }
+
+        unsigned int numAdjacents = adjacents[0];  // Get the number of adjacent vertices
+
+        // Loop through adjacency list, starting from adjacents[1] to adjacents[numAdjacents]
+        for (unsigned int j = 1; j <= numAdjacents; j++) {
+          unsigned int w = adjacents[j];  // Get the adjacent vertex
+
+          // If the vertex has not been visited or we find a shorter path
+          if (result->marked[w] == 0 || result->distance[w] > result->distance[v] + 1) {
+            result->marked[w] = 1;          // Mark as visited
+            result->distance[w] = result->distance[v] + 1;  // Update distance
+            result->predecessor[w] = v;     // Set the predecessor
+          }
+
+          // If the graph is undirected (not a digraph), process the reverse edge (from w to v)
+          if (!GraphIsDigraph(g)) {  // Check if the graph is undirected
+            if (result->marked[v] == 0 || result->distance[v] > result->distance[w] + 1) {
+              result->marked[v] = 1;          // Mark as visited
+              result->distance[v] = result->distance[w] + 1;  // Update distance
+              result->predecessor[v] = w;     // Set the predecessor
+            }
+          }
+        }
+
+        free(adjacents);  // Free memory used for adjacencies list
+        free(distances);  // Free memory used for distances list
       }
     }
   }
 
-  return result;  // Return the Bellman-Ford result
+  // Check for negative-weight cycles (not needed for unweighted graphs)
+  // This step is skipped since the graph is unweighted
+
+  return result;
 }
 
 
