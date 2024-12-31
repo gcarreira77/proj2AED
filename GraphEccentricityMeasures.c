@@ -34,6 +34,12 @@ struct _GraphEccentricityMeasures {
   int graphDiameter;    // the graph diameter
 };
 
+
+static void computeEccentricities(Graph* g, GraphAllPairsShortestDistances* apsd, 
+                                  int* eccentricity, int* radius, int* diameter);
+
+static unsigned int* computeCentralVertices(const int* eccentricity, unsigned int numVertices, int radius);                                 
+
 // Allocate memory
 // Compute the vertex eccentricity values
 // Compute graph radius and graph diameter
@@ -50,8 +56,29 @@ GraphEccentricityMeasures* GraphEccentricityMeasuresCompute(Graph* g) {
   // Computing the set of central vertices
   // Allocate the central vertices array : number of central vertices + 1
   // Fill in the central vertices array
+  
+  unsigned int numVertices = GraphGetNumVertices(g);
 
-  return NULL;
+  // Allocate the structure
+  GraphEccentricityMeasures* measures = malloc(sizeof(GraphEccentricityMeasures));
+  measures->eccentricity = calloc(numVertices, sizeof(int));
+  measures->graph = g;
+  measures->graphRadius = -1;
+  measures->graphDiameter = -1;
+  
+  // Compute all-pairs shortest distances
+  GraphAllPairsShortestDistances* allPairsShortestDistances = GraphAllPairsShortestDistancesExecute(g);
+  
+  // Compute eccentricities, radius, and diameter
+  computeEccentricities(g, allPairsShortestDistances, measures->eccentricity, &measures->graphRadius, &measures->graphDiameter);
+  
+  // Compute central vertices
+  measures->centralVertices = computeCentralVertices(measures->eccentricity, numVertices, measures->graphRadius);
+  
+  // Destroy the APSD structure
+  GraphAllPairsShortestDistancesDestroy(&allPairsShortestDistances);
+
+  return measures;
 }
 
 void GraphEccentricityMeasuresDestroy(GraphEccentricityMeasures** p) {
@@ -96,8 +123,12 @@ unsigned int* GraphGetCentralVertices(const GraphEccentricityMeasures* p) {
   assert(p->centralVertices != NULL);
 
   // COMPLETE THE CODE
-
-  return NULL;
+  unsigned int size = p->centralVertices[0];
+  unsigned int* copy = malloc((size + 1) * sizeof(unsigned int));
+  for (unsigned int i = 0; i <= size; i++) {
+      copy[i] = p->centralVertices[i];
+  }
+  return copy;
 }
 
 // Print the graph radius and diameter
@@ -105,4 +136,71 @@ unsigned int* GraphGetCentralVertices(const GraphEccentricityMeasures* p) {
 // Print the set of central vertices
 void GraphEccentricityMeasuresPrint(const GraphEccentricityMeasures* p) {
   // COMPLETE THE CODE
+  assert(p != NULL);
+
+  printf("Graph Radius: %d\n", p->graphRadius);
+  printf("Graph Diameter: %d\n", p->graphDiameter);
+  printf("Vertex Eccentricities:\n");
+  for (unsigned int v = 0; v < GraphGetNumVertices(p->graph); v++) {
+      printf("Vertex %u: %d\n", v, p->eccentricity[v]);
+  }
+  printf("Central Vertices (Eccentricity = %d):\n", p->graphRadius);
+  for (unsigned int i = 1; i <= p->centralVertices[0]; i++) {
+      printf("Vertex %u\n", p->centralVertices[i]);
+  }
+}
+
+// Compute eccentricity, radius, and diameter
+static void computeEccentricities(Graph* g, GraphAllPairsShortestDistances* allPairsShortestDistances, 
+                                  int* eccentricity, int* radius, int* diameter) {
+    unsigned int numVertices = GraphGetNumVertices(g);
+
+    *radius = -1;
+    *diameter = -1;
+
+    for (unsigned int v = 0; v < numVertices; v++) {
+        int maxDistance = -1;
+
+        for (unsigned int w = 0; w < numVertices; w++) {
+            int distance = GraphGetDistanceVW(allPairsShortestDistances, v, w);
+            if (distance > maxDistance) {
+                maxDistance = distance;
+            }
+        }
+
+        eccentricity[v] = maxDistance;
+
+        if (*radius == -1 || maxDistance < *radius) {
+            *radius = maxDistance;
+        }
+
+        if (maxDistance > *diameter) {
+            *diameter = maxDistance;
+        }
+    }
+}
+
+// Compute the set of central vertices
+static unsigned int* computeCentralVertices(const int* eccentricity, unsigned int numVertices, int radius) {
+    unsigned int centralCount = 0;
+
+    // Count the number of central vertices
+    for (unsigned int v = 0; v < numVertices; v++) {
+        if (eccentricity[v] == radius) {
+            centralCount++;
+        }
+    }
+
+    // Allocate and populate the central vertices array
+    unsigned int* centralVertices = malloc((centralCount + 1) * sizeof(unsigned int));
+    centralVertices[0] = centralCount;
+
+    unsigned int idx = 1;
+    for (unsigned int v = 0; v < numVertices; v++) {
+        if (eccentricity[v] == radius) {
+            centralVertices[idx++] = v;
+        }
+    }
+
+    return centralVertices;
 }
