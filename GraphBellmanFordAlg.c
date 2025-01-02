@@ -108,51 +108,36 @@ GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g,
   result->marked[startVertex] = 1;
   result->distance[startVertex] = 0;
 
+  int counterEx = 0; //counter exterior loop
+  int counterMid = 0; //counter middle loop
+  int counterInt= 0; //counter interior loop
+
   // Perform the Bellman-Ford algorithm
   for (unsigned int i = 0; i < numVertices - 1; i++) {
-    for (unsigned int v = 0; v < numVertices; v++) {
-      if (result->marked[v]) { // Only consider reached vertices
-        unsigned int* adjacents = GraphGetAdjacentsTo(g, v);
-        double* distances = GraphGetDistancesToAdjacents(g, v);
+    counterEx += 1;
+    for (unsigned int j = 0; j < numVertices; j++) {
+      counterMid += 1;
 
-        // Ensure that adjacents and distances are valid
-        if (adjacents == NULL || distances == NULL) {
-          free(adjacents);
-          free(distances);
-          continue;
+      unsigned int* adjacents = GraphGetAdjacentsTo(g, j);   //adjacent vertexes
+      
+      unsigned int num_adj = adjacents[0];        //Number of adjacent vertexes
+
+      for (unsigned int k=1; k<=num_adj; k++) {
+        counterInt += 1;
+        unsigned int v = adjacents[k];
+
+        //If distance to vertex is smaller than j, or if j doesnt have a path yet
+        if ((result->distance[v] == -1 || result->distance[j]+1 < result->distance[v]) && result->distance[j] != -1) { 
+          result->marked[v] = 1;   //Marks the path to v
+          result->distance[v] = result->distance[j] + 1;//Saves distance to the vertex
+          result->predecessor[v] = j;  
         }
-
-        unsigned int numAdjacents = adjacents[0];  // Get the number of adjacent vertices
-
-        // Loop through adjacency list, starting from adjacents[1] to adjacents[numAdjacents]
-        for (unsigned int j = 1; j <= numAdjacents; j++) {
-          unsigned int w = adjacents[j];  // Get the adjacent vertex
-
-          // If the vertex has not been visited or we find a shorter path
-          if (result->marked[w] == 0 || result->distance[w] > result->distance[v] + 1) {
-            result->marked[w] = 1;          // Mark as visited
-            result->distance[w] = result->distance[v] + 1;  // Update distance
-            result->predecessor[w] = v;     // Set the predecessor
-          }
-
-          // If the graph is undirected (not a digraph), process the reverse edge (from w to v)
-          if (!GraphIsDigraph(g)) {  // Check if the graph is undirected
-            if (result->marked[v] == 0 || result->distance[v] > result->distance[w] + 1) {
-              result->marked[v] = 1;          // Mark as visited
-              result->distance[v] = result->distance[w] + 1;  // Update distance
-              result->predecessor[v] = w;     // Set the predecessor
-            }
-          }
-        }
-
-        free(adjacents);  // Free memory used for adjacencies list
-        free(distances);  // Free memory used for distances list
       }
+      free(adjacents);    
     }
   }
 
-  // Check for negative-weight cycles (not needed for unweighted graphs)
-  // This step is skipped since the graph is unweighted
+  printf("Iteraçoes Exteriores: %d; Iterações Medio: %d; Iterações Interiores: %d;\n", counterEx, counterMid, counterInt);
 
   return result;
 }
