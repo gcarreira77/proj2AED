@@ -108,22 +108,22 @@ GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g,
   result->marked[startVertex] = 1;
   result->distance[startVertex] = 0;
 
-  int counterEx = 0; //counter exterior loop
-  int counterMid = 0; //counter middle loop
-  int counterInt= 0; //counter interior loop
+  //int counterEx = 0; //counter exterior loop
+  //int counterMid = 0; //counter middle loop
+  //int counterInt= 0; //counter interior loop
 
   // Perform the Bellman-Ford algorithm
   for (unsigned int i = 0; i < numVertices - 1; i++) {
-    counterEx += 1;
+    //counterEx += 1;
     for (unsigned int j = 0; j < numVertices; j++) {
-      counterMid += 1;
+      //counterMid += 1;
 
       unsigned int* adjacents = GraphGetAdjacentsTo(g, j);   //adjacent vertexes
       
       unsigned int num_adj = adjacents[0];        //Number of adjacent vertexes
 
       for (unsigned int k=1; k<=num_adj; k++) {
-        counterInt += 1;
+        //counterInt += 1;
         unsigned int v = adjacents[k];
 
         //If distance to vertex is smaller than j, or if j doesnt have a path yet
@@ -137,7 +137,7 @@ GraphBellmanFordAlg* GraphBellmanFordAlgExecute(Graph* g,
     }
   }
 
-  printf("Iteraçoes Exteriores: %d; Iterações Medio: %d; Iterações Interiores: %d;\n", counterEx, counterMid, counterInt);
+  //printf("Iteraçoes Exteriores: %d; Iterações Medio: %d; Iterações Interiores: %d;\n", counterEx, counterMid, counterInt);
 
   return result;
 }
